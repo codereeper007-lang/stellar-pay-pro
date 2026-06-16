@@ -89,9 +89,6 @@ npm run dev
 ### 4. Mobile Responsive UI (Home View)
 <img src="./public/screenshots/mobile_responsive_1.jpg" alt="Mobile Responsive Home" width="300" />
 
-### 5. Mobile Responsive UI (Features View)
-<img src="./public/screenshots/mobile_responsive_2.jpg" alt="Mobile Responsive Features" width="300" />
-
 </details>
 
 ---
