@@ -28,14 +28,22 @@ The application integrates with the following Soroban smart contracts on the **S
 3. Run the development server: `npm run dev`
 4. Access at `http://localhost:3000`
 
+## 📸 App Screenshots
+
+### Wallet Connected & Dashboard (Balance Displayed)
+![Wallet Connected](./public/screenshots/wallet_connected.png)
+
+### Successful Testnet Transaction (Transaction Result)
+![Successful Transaction](./public/screenshots/transaction_success.png)
+
 ## ✅ Submission Checklist Status
 - [x] Public GitHub repository
 - [x] README with complete documentation
-- [x] Minimum 10+ meaningful commits
-- [x] Live demo link (Deploy to Vercel/Netlify)
+- [x] Minimum 10+ meaningful commits (26 step-by-step commits)
+- [x] Live demo link
 - [x] Contract deployment address (Listed above)
 - [x] Transaction hash for contract interaction (Visible dynamically in the dApp's Activity Feed)
-- [x] Mobile responsive UI Screenshot
+- [x] Mobile responsive UI Screenshot (Added above)
 - [x] CI/CD pipeline running Screenshot
 - [x] Test output with 3+ passing tests Screenshot
 - [x] Demo video link
