@@ -2,6 +2,8 @@
 
 StellarPay Pro is a next-generation, mobile-responsive dApp built on the Stellar Testnet. It demonstrates advanced smart contract capabilities, real-time event streaming, and production-ready architecture.
 
+**Live Demo:** [https://stellar-pay-pro.vercel.app/](https://stellar-pay-pro.vercel.app/)
+
 ## 🚀 Features & Architecture
 - **Production-Ready Architecture:** Built with Next.js 14 (App Router), strict TypeScript, and Tailwind CSS.
 - **Mobile Responsive Frontend:** Fluid UI that scales perfectly from desktop to mobile screens using modern glass-morphism aesthetics.
@@ -50,7 +52,7 @@ The application integrates with the following Soroban smart contracts on the **S
 - [x] Public GitHub repository
 - [x] README with complete documentation
 - [x] Minimum 10+ meaningful commits (26 step-by-step commits)
-- [x] Live demo link
+- [x] Live demo link: [https://stellar-pay-pro.vercel.app/](https://stellar-pay-pro.vercel.app/)
 - [x] Contract deployment address (Listed above)
 - [x] Transaction hash for contract interaction (Visible dynamically in the dApp's Activity Feed)
 - [x] Mobile responsive UI Screenshot (Added above)
