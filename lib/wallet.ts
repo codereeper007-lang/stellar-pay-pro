@@ -3,15 +3,17 @@ import { FreighterModule, FREIGHTER_ID } from '@creit-tech/stellar-wallets-kit/m
 import { xBullModule, XBULL_ID } from '@creit-tech/stellar-wallets-kit/modules/xbull'
 import { AlbedoModule, ALBEDO_ID } from '@creit-tech/stellar-wallets-kit/modules/albedo'
 
-StellarWalletsKit.init({
-  network: Networks.TESTNET,
-  selectedWalletId: FREIGHTER_ID,
-  modules: [
-    new FreighterModule(),
-    new xBullModule(),
-    new AlbedoModule()
-  ]
-})
+if (typeof window !== 'undefined') {
+  StellarWalletsKit.init({
+    network: Networks.TESTNET,
+    selectedWalletId: FREIGHTER_ID,
+    modules: [
+      new FreighterModule(),
+      new xBullModule(),
+      new AlbedoModule()
+    ]
+  })
+}
 
 export const kit = StellarWalletsKit
 

@@ -11,6 +11,7 @@ import {
 import { getXLMBalance } from '@/lib/stellar'
 import { connectWallet, disconnectWallet, kit } from '@/lib/wallet'
 import type { WalletState } from '@/types'
+import { showToast } from '@/components/ui/Toast'
 
 interface WalletContextType extends WalletState {
   connect: (walletId: string) => Promise<void>
@@ -51,8 +52,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         network: 'TESTNET',
         walletId
       })
+      showToast('success', 'Wallet connected successfully!')
     } else {
       setState(s => ({ ...s, isLoading: false }))
+      showToast('error', error || 'Failed to connect wallet')
     }
   }
 
