@@ -9,7 +9,7 @@ import {
   ReactNode
 } from 'react'
 import { getXLMBalance } from '@/lib/stellar'
-import { connectWallet, disconnectWallet, kit } from '@/lib/wallet'
+import { connectWallet, disconnectWallet } from '@/lib/wallet'
 import type { WalletState } from '@/types'
 import { showToast } from '@/components/ui/Toast'
 
