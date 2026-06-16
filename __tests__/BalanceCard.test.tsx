@@ -15,10 +15,10 @@ jest.mock('@/context/WalletContext', () => ({
 }))
 
 describe('BalanceCard', () => {
-  it('renders the XLM balance', () => {
+  it('renders the XLM balance', async () => {
     render(<BalanceCard />)
-    expect(screen.getByText(/1234/)).toBeInTheDocument()
-    expect(screen.getByText(/\.5678/)).toBeInTheDocument()
+    expect(await screen.findByText(/1234/)).toBeInTheDocument()
+    expect(await screen.findByText(/\.5678/)).toBeInTheDocument()
   })
 
   it('shows TESTNET badge', () => {

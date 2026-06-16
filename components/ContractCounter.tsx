@@ -1,205 +1,144 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
+import confetti from 'canvas-confetti'
+import { getCount, callIncrement } from '@/lib/soroban'
 import { useWallet } from '@/context/WalletContext'
-import { getCount, callIncrement, CONTRACT_IDS } from '@/lib/soroban'
 import { UserRejectedError } from '@/lib/errors'
 
-type Status = 'IDLE' | 'SIMULATING' | 'SIGNING' | 'SENDING' | 'SUCCESS' | 'FAILED'
-
 export function ContractCounter() {
-  const { publicKey, isConnected } = useWallet()
+  const { publicKey } = useWallet()
   const [count, setCount] = useState<number | null>(null)
-  const [status, setStatus] = useState<Status>('IDLE')
-  const [txHash, setTxHash] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const [popKey, setPopKey] = useState(0) // trigger re-animation
-  const prevCountRef = useRef<number | null>(null)
+  const [txHash, setTxHash] = useState<string | null>(null)
+  const [isFlipping, setIsFlipping] = useState(false)
 
-  // Load count on mount
-  useEffect(() => {
-    getCount().then((c) => {
-      setCount(c)
-      prevCountRef.current = c
-    })
-  }, [])
-
-  const handleIncrement = async () => {
-    if (!publicKey || status !== 'IDLE') return
-    setError(null)
-    setTxHash(null)
-
+  const fetchCount = async () => {
     try {
-      setStatus('SIMULATING')
-      // Simulate briefly then jump to signing
-      await new Promise((r) => setTimeout(r, 600))
-      setStatus('SIGNING')
-
-      const result = await callIncrement(publicKey)
-
-      setStatus('SENDING')
-      await new Promise((r) => setTimeout(r, 300))
-
-      setCount(result.count)
-      setPopKey((k) => k + 1)
-      setTxHash(result.txHash)
-      setStatus('SUCCESS')
-      setTimeout(() => setStatus('IDLE'), 6000)
-    } catch (e: any) {
-      if (e instanceof UserRejectedError || e?.message?.includes('reject')) {
-        setError('You rejected the signing request.')
-      } else {
-        setError(e?.message || 'Contract call failed.')
+      const c = await getCount()
+      if (c !== count && count !== null) {
+        setIsFlipping(true)
+        setTimeout(() => setIsFlipping(false), 500)
       }
-      setStatus('FAILED')
-      setTimeout(() => setStatus('IDLE'), 5000)
+      setCount(c)
+    } catch {
+      setError('Failed to fetch count')
     }
   }
 
-  const formatContractId = (id: string) =>
-    `${id.slice(0, 6)}…${id.slice(-6)}`
+  useEffect(() => {
+    fetchCount()
+    const int = setInterval(fetchCount, 5000)
+    return () => clearInterval(int)
+  }, [count])
 
-  const copyContractId = async () => {
-    await navigator.clipboard.writeText(CONTRACT_IDS.counter).catch(() => {})
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleIncrement = async () => {
+    if (!publicKey) return
+    setLoading(true)
+    setError(null)
+    setTxHash(null)
+    try {
+      const result = await callIncrement(publicKey)
+      if (result && result.txHash) {
+        setTxHash(result.txHash)
+        
+        // Confetti burst
+        const btn = document.getElementById('increment-btn')
+        if (btn) {
+          const rect = btn.getBoundingClientRect()
+          const x = (rect.left + rect.width / 2) / window.innerWidth
+          const y = (rect.top + rect.height / 2) / window.innerHeight
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { x, y },
+            colors: ['#4338CA', '#7C3AED', '#EEF2FF']
+          })
+        }
+        
+        await fetchCount()
+      } else {
+        setError('Transaction failed')
+      }
+    } catch (err: any) {
+      if (err instanceof UserRejectedError) {
+        setError('Transaction rejected in wallet.')
+      } else {
+        setError(err?.message || 'Error executing contract')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
-
-  const buttonLabel: Record<Status, string> = {
-    IDLE: 'Increment Counter',
-    SIMULATING: 'Simulating…',
-    SIGNING: 'Waiting for approval…',
-    SENDING: 'Submitting…',
-    SUCCESS: 'Incremented! ✓',
-    FAILED: 'Try Again',
-  }
-
-  const isLoading = ['SIMULATING', 'SIGNING', 'SENDING'].includes(status)
 
   return (
-    <div
-      className={`premium-card p-6 transition-all duration-300 ${
-        status === 'SUCCESS' ? 'glow-success ring-2 ring-emerald-500/30' : ''
-      } fade-in`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] flex items-center justify-center">
-            <svg className="w-4 h-4 text-[#3730A3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-          </div>
-          <div>
-            <div className="text-sm font-bold text-[#1C1917]">On-Chain Counter</div>
-            <div className="text-xs text-[#78716C]">Soroban Smart Contract</div>
-          </div>
+    <div className={`premium-card p-6 overflow-hidden relative transition-colors duration-500 ${txHash && !loading ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : ''}`}>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--accent-glow)_0%,_transparent_70%)] opacity-5 animate-pulse pointer-events-none" />
+      
+      <div className="flex items-center justify-between mb-8 relative z-10">
+        <div>
+          <h3 className="text-xl font-black text-[var(--text-primary)]">Contract Counter</h3>
+          <p className="text-xs text-[var(--text-secondary)] font-bold mt-1">Soroban Smart Contract</p>
         </div>
-
-        {/* Contract address badge */}
-        <button
-          onClick={copyContractId}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F5F5F4] hover:bg-[#EEF2FF] text-[#78716C] hover:text-[#3730A3] text-[11px] font-mono font-semibold transition-all group"
-          title="Copy contract address"
-        >
-          {formatContractId(CONTRACT_IDS.counter)}
-          {copied ? (
-            <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <svg className="w-3 h-3 opacity-60 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          )}
-        </button>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0FDF4] border border-[#15803D]/20 shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] live-dot" />
+          <span className="text-[9px] font-black text-[var(--success)] uppercase tracking-wider">Live</span>
+        </div>
       </div>
 
-      {/* Large count display */}
-      <div className="text-center py-8 select-none">
-        <div
-          key={popKey}
-          className={`text-7xl font-black stat-number text-[#1C1917] tracking-tight leading-none ${
-            popKey > 0 ? 'count-pop' : ''
-          } ${status === 'SUCCESS' ? 'gradient-text' : ''}`}
-        >
-          {count === null ? (
-            <span className="inline-block w-24 h-16 skeleton mx-auto" />
-          ) : (
-            count.toLocaleString()
-          )}
-        </div>
-        <p className="text-sm text-[#78716C] font-medium mt-3">
-          total increments on Stellar Testnet
-        </p>
+      <div className="flex flex-col items-center justify-center py-6 relative z-10">
+        {count === null ? (
+          <div className="h-[120px] flex items-center justify-center">
+            <div className="circle-spinner w-8 h-8 text-[var(--accent)]" />
+          </div>
+        ) : (
+          <div className={`text-8xl md:text-9xl font-black text-gradient tracking-tighter ${isFlipping ? 'count-flip' : ''}`}>
+            {count}
+          </div>
+        )}
       </div>
 
-      {/* Success row */}
-      {status === 'SUCCESS' && txHash && (
-        <div className="mb-4 p-3 rounded-xl bg-[#DCFCE7] border border-emerald-200 flex items-center justify-between fade-in">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-[#166534] flex items-center justify-center text-white">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <span className="text-[#166534] text-xs font-bold">Incremented! New count: {count}</span>
-          </div>
-          <a
-            href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#3730A3] text-xs font-bold hover:underline"
-          >
-            View →
+      {error && (
+        <div className="mb-4 text-[11px] font-bold text-[var(--error)] bg-[var(--error-light)] px-3 py-2 rounded-lg border border-[var(--error)]/20 text-center">
+          {error}
+        </div>
+      )}
+
+      {txHash && !loading && !error && (
+        <div className="mb-4 text-center">
+          <a href={`https://stellar.expert/explorer/testnet/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-[var(--accent)] hover:text-[var(--accent-hover)] underline transition-colors">
+            View confirmation on Explorer &rarr;
           </a>
         </div>
       )}
 
-      {/* Error */}
-      {status === 'FAILED' && error && (
-        <div className="mb-4 p-3 rounded-xl bg-[#FEE2E2] border border-red-200 fade-in">
-          <p className="text-[#991B1B] text-xs font-semibold">{error}</p>
-        </div>
-      )}
-
-      {/* Increment button */}
       <button
+        id="increment-btn"
         onClick={handleIncrement}
-        disabled={isLoading || !isConnected}
-        className={`w-full py-3 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#3730A3] focus:ring-offset-2 ${
-          status === 'SUCCESS'
-            ? 'bg-[#DCFCE7] text-[#166534] border border-emerald-200'
-            : isLoading || !isConnected
-            ? 'bg-[#EEF2FF] text-[#3730A3]/50 cursor-not-allowed'
-            : 'bg-[#3730A3] hover:bg-[#312e81] text-white hover:shadow-lg hover:-translate-y-0.5 glow-accent'
-        }`}
+        disabled={loading || count === null || !publicKey}
+        className="btn-press btn-primary-glow relative z-10 w-full py-4 px-4 rounded-xl text-sm font-black text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {isLoading && (
-          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
+        {loading ? (
+          <>
+            <div className="circle-spinner" />
+            Signing...
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+            Increment Count
+          </>
         )}
-        {buttonLabel[status]}
       </button>
 
-      {!isConnected && (
-        <p className="text-center text-xs text-[#78716C] mt-2">Connect wallet to increment</p>
-      )}
-
-      {/* Footer link */}
-      <div className="mt-4 pt-4 border-t border-[#E7E5E4] text-center">
-        <a
-          href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_IDS.counter}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-[#78716C] hover:text-[#3730A3] font-medium transition-colors inline-flex items-center gap-1"
+      <div className="mt-4 text-center relative z-10">
+        <a 
+          href={`https://stellar.expert/explorer/testnet/contract/${process.env.NEXT_PUBLIC_COUNTER_CONTRACT_ID}`}
+          target="_blank" rel="noopener noreferrer"
+          className="text-[10px] font-bold text-[var(--text-hint)] hover:text-[var(--text-secondary)] transition-colors uppercase tracking-widest inline-flex items-center gap-1"
         >
-          View contract on Stellar Expert
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
+          View Contract Source
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
         </a>
       </div>
     </div>
