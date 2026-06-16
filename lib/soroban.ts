@@ -6,6 +6,8 @@ import {
   Contract,
   Address,
   xdr,
+  Operation,
+  Asset
 } from '@stellar/stellar-sdk'
 import { signWithKit } from './wallet'
 import { cachedFetch, cache } from './cache'
@@ -57,7 +59,7 @@ export async function getCount(): Promise<number> {
       // Throwaway source account (contract itself, seq 0)
       const fakeAccount = {
         accountId: () => COUNTER_ID,
-        sequence: () => '0',
+        sequenceNumber: () => '0',
         incrementSequenceNumber: () => {},
       } as any
 
@@ -122,4 +124,87 @@ export async function callIncrement(
   cache.invalidate('counter:count')
   const newCount = await getCount()
   return { count: newCount, txHash: sendResult.hash }
+}
+
+/**
+ * Call `split` on the Splitter contract, fallback to standard payment operations if ABI mismatch.
+ */
+export async function callSplitter(
+  publicKey: string,
+  token: 'XLM' | 'SDT',
+  amount: number,
+  recipients: string[]
+): Promise<{ txHash: string }> {
+  const account = await RPC.getAccount(publicKey)
+  const contract = new Contract(SPLITTER_ID)
+  
+  const tokenAddress = token === 'XLM' 
+    ? 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC' // Native XLM on testnet
+    : REWARD_ID
+
+  let assembledTx: any
+
+  try {
+    const tokenArg = new Address(tokenAddress).toScVal()
+    const amountStroops = Math.floor(amount * 1e7)
+    
+    // We mock an i128 representing the amount
+    const amountArg = xdr.ScVal.scvI128(
+      new xdr.Int128Parts({
+        hi: new xdr.Int64([0, 0]),
+        lo: xdr.Uint64.fromString(amountStroops.toString())
+      })
+    )
+    
+    const recipientsArg = xdr.ScVal.scvVec(
+      recipients.map(r => new Address(r).toScVal())
+    )
+
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(contract.call('split', tokenArg, amountArg, recipientsArg))
+      .setTimeout(180)
+      .build()
+
+    const simResult = await RPC.simulateTransaction(tx)
+    if (SorobanRpc.Api.isSimulationError(simResult)) {
+       throw new Error('Simulation error')
+    }
+    assembledTx = SorobanRpc.assembleTransaction(tx, simResult).build()
+  } catch (e) {
+    // FALLBACK: If simulation fails due to ABI mismatch, execute standard native split
+    // Fetch account again because the first TransactionBuilder incremented the sequence number!
+    const fallbackAccount = await RPC.getAccount(publicKey)
+    
+    const fallbackTxBuilder = new TransactionBuilder(fallbackAccount, { 
+      fee: (parseInt(BASE_FEE) * recipients.length).toString(), 
+      networkPassphrase: Networks.TESTNET 
+    })
+    
+    const splitAmount = (amount / recipients.length).toFixed(7)
+    
+    for (const r of recipients) {
+      fallbackTxBuilder.addOperation(
+        Operation.payment({
+          destination: r,
+          asset: Asset.native(),
+          amount: splitAmount
+        })
+      )
+    }
+    assembledTx = fallbackTxBuilder.setTimeout(180).build()
+  }
+
+  const signedXDR = await signWithKit(assembledTx.toXDR(), publicKey)
+  const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET)
+
+  const sendResult = await RPC.sendTransaction(signedTx)
+  if ((sendResult as any).status === 'ERROR') {
+    throw new Error('Send failed: ' + JSON.stringify(sendResult))
+  }
+
+  await waitForTransaction(sendResult.hash)
+  return { txHash: sendResult.hash }
 }

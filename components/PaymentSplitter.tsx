@@ -2,14 +2,19 @@
 import React, { useState } from 'react'
 import { useWallet } from '@/context/WalletContext'
 import { copyToClipboard } from '@/lib/clipboard'
+import { callSplitter } from '@/lib/soroban'
+import confetti from 'canvas-confetti'
 
 type Token = 'XLM' | 'SDT'
 
 export function PaymentSplitter() {
-  const { isConnected } = useWallet()
+  const { isConnected, publicKey } = useWallet()
   const [token, setToken] = useState<Token>('XLM')
   const [total, setTotal] = useState('')
   const [recipients, setRecipients] = useState<string[]>(['', ''])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [txHash, setTxHash] = useState<string | null>(null)
   
   const numTotal = parseFloat(total || '0')
   const share = recipients.length > 0 ? numTotal / recipients.length : 0
@@ -32,8 +37,39 @@ export function PaymentSplitter() {
     })
   }
 
+  const handleSubmit = async () => {
+    if (!publicKey || numTotal <= 0 || recipients.some(r => r.length < 56)) return
+    
+    setLoading(true)
+    setError(null)
+    setTxHash(null)
+    
+    try {
+      const { txHash } = await callSplitter(publicKey, token, numTotal, recipients)
+      setTxHash(txHash)
+      
+      const btn = document.getElementById('split-btn')
+      if (btn) {
+        const rect = btn.getBoundingClientRect()
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { x: (rect.left + rect.width / 2) / window.innerWidth, y: (rect.top + rect.height / 2) / window.innerHeight },
+          colors: ['#3730A3', '#818CF8', '#10B981']
+        })
+      }
+      
+      setTotal('')
+      setRecipients(['', ''])
+    } catch (err: any) {
+      setError(err?.message || 'Transaction failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className="premium-card card-ambient p-6 h-full flex flex-col">
+    <div className={`premium-card card-ambient p-6 h-full flex flex-col transition-colors duration-500 ${txHash && !loading ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : ''}`}>
       <div className="flex items-center justify-between mb-8">
         <div>
           <h3 className="text-xl font-black text-[var(--text-primary)]">Split Payment</h3>
@@ -134,12 +170,35 @@ export function PaymentSplitter() {
               </div>
             )}
           </div>
+          
+          {error && (
+            <div className="text-[11px] font-bold text-[var(--error)] bg-[var(--error-light)] px-3 py-2 rounded-lg border border-[var(--error)]/20 text-center">
+              {error}
+            </div>
+          )}
+
+          {txHash && !loading && !error && (
+            <div className="text-center">
+              <a href={`https://stellar.expert/explorer/testnet/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-[var(--accent)] hover:text-[var(--accent-hover)] underline transition-colors">
+                View split confirmation on Explorer &rarr;
+              </a>
+            </div>
+          )}
 
           <button
-            disabled={!isConnected || numTotal <= 0 || recipients.some(r => r.length < 56)}
-            className="btn-press btn-primary-glow w-full py-4 rounded-xl font-black text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[var(--accent)]/20"
+            id="split-btn"
+            onClick={handleSubmit}
+            disabled={!isConnected || numTotal <= 0 || recipients.some(r => r.length < 56) || loading}
+            className="btn-press btn-primary-glow w-full py-4 rounded-xl font-black text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[var(--accent)]/20 flex items-center justify-center gap-2"
           >
-            Sign & Submit Split
+            {loading ? (
+              <>
+                <div className="circle-spinner" />
+                Processing Split...
+              </>
+            ) : (
+              'Sign & Submit Split'
+            )}
           </button>
         </div>
       </div>
