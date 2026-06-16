@@ -48,17 +48,26 @@ The application integrates with the following Soroban smart contracts on the **S
 - **Standard Transaction/Split Fallback Transaction Hash:** `d65eb89559fa1fe44897a5595d3357b2144d4b41b4120327063955b077a1ec66`
   - [View on Stellar Expert Explorer](https://stellar.expert/explorer/testnet/tx/d65eb89559fa1fe44897a5595d3357b2144d4b41b4120327063955b077a1ec66)
 
+## 🏆 Hackathon Requirements Fulfilled
+- ✅ **Advanced smart contract development:** Custom Soroban contracts for token transfers and payment splitting.
+- ✅ **Inter-contract communication:** The Payment Splitter contract successfully routes logic and transfers to the Reward token contract.
+- ✅ **Event streaming & real-time updates:** Horizon and Soroban RPC real-time feeds displayed in the Activity Feed.
+- ✅ **CI/CD pipeline setup:** GitHub Actions workflow (`ci.yml`) for automated dependency installation, testing, and production build.
+- ✅ **Smart contract deployment workflow:** Complete deployment architecture with testnet verification.
+- ✅ **Mobile responsive frontend development:** Fluid UI built with Tailwind CSS, perfectly scaling to all devices.
+- ✅ **Error handling & loading states:** Graceful fallbacks, toast notifications, and detailed loading indicators for all async actions.
+- ✅ **Writing tests for contracts and frontend:** Comprehensive Jest and React Testing Library suites verifying UI state and Soroban formatting.
+- ✅ **Production-ready architecture practices:** Next.js 14 App Router, strict TypeScript, and component-driven design.
+- ✅ **Documentation & demo presentation:** Detailed README, inline code documentation, and Vercel live demo.
+
 ## ✅ Submission Checklist Status
-- [x] Public GitHub repository
-- [x] README with complete documentation
-- [x] Minimum 10+ meaningful commits (26 step-by-step commits)
-- [x] Live demo link: [https://stellar-pay-pro.vercel.app/](https://stellar-pay-pro.vercel.app/)
-- [x] Contract deployment address (Listed above)
-- [x] Transaction hash for contract interaction (Visible dynamically in the dApp's Activity Feed)
-- [x] Mobile responsive UI Screenshot (Added above)
-- [x] CI/CD pipeline running Screenshot
-- [x] Test output with 3+ passing tests Screenshot
-- [x] Demo video link
+- [x] **Public GitHub repository:** Hosted and pushed.
+- [x] **README with setup instructions:** Covered in the "Local Development" section.
+- [x] **Minimum 2+ meaningful commits:** 27+ meaningful, step-by-step commits across frontend and smart contracts.
+- [x] **Live demo link:** [https://stellar-pay-pro.vercel.app/](https://stellar-pay-pro.vercel.app/)
+- [x] **Screenshot: wallet options available:** Added above in the App Screenshots section.
+- [x] **Deployed contract address:** Listed in the "Smart Contracts Deployed" section.
+- [x] **Transaction hash of a contract call (verifiable on Stellar Explorer):** Listed in the "On-Chain Verified Transactions" section.
 
 ---
 *Built for the Stellar ecosystem.*
