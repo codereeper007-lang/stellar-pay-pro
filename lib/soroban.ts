@@ -58,7 +58,7 @@ export async function getCount(): Promise<number> {
 
       // Throwaway source account (contract itself, seq 0)
       const fakeAccount = {
-        accountId: () => COUNTER_ID,
+        accountId: () => 'GBZXN7P3UPON4U4WUVBDWAKX3LNNLBNG4BPNWBYNXVU3IHLK7CH2I66X',
         sequenceNumber: () => '0',
         incrementSequenceNumber: () => {},
       } as any
@@ -76,6 +76,11 @@ export async function getCount(): Promise<number> {
 
       const retval = (result as any).result?.retval
       if (!retval) return 0
+      
+      if (typeof retval === 'object' && retval.switch) {
+        return retval.switch().name === 'scvU32' ? retval.u32() : 0
+      }
+
       try {
         const decoded = xdr.ScVal.fromXDR(retval, 'base64')
         return decoded.switch().name === 'scvU32' ? decoded.u32() : 0

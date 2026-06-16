@@ -6,7 +6,7 @@ import { WalletModal } from '@/components/WalletModal'
 import { BalanceCard } from '@/components/BalanceCard'
 import { FaucetButton } from '@/components/FaucetButton'
 import { SendPayment } from '@/components/SendPayment'
-import { ContractCounter } from '@/components/ContractCounter'
+import Link from 'next/link'
 import { ActivityFeed } from '@/components/ActivityFeed'
 import { PaymentSplitter } from '@/components/PaymentSplitter'
 import { MobileMenu } from '@/components/MobileMenu'
@@ -167,9 +167,18 @@ export default function Home() {
 
                 {/* Right Column */}
                 <div className="lg:col-span-1 space-y-6">
-                  <ErrorBoundary>
-                    <ContractCounter />
-                  </ErrorBoundary>
+                  <div className="premium-card p-6 flex flex-col items-center justify-center text-center space-y-4 shadow-sm border border-[var(--border-soft)]">
+                    <div className="w-12 h-12 rounded-full bg-[var(--accent-light)] text-[var(--accent)] flex items-center justify-center">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-[var(--text-primary)]">Contract Counter</h3>
+                      <p className="text-xs font-bold text-[var(--text-secondary)] mt-1">Interact with Soroban smart contract</p>
+                    </div>
+                    <Link href="/counter" className="btn-press w-full py-3 rounded-xl font-black text-[var(--accent)] bg-[var(--accent-light)] hover:bg-[#E0E7FF] transition-colors block text-center">
+                      Open Counter Page
+                    </Link>
+                  </div>
                   
                   <ErrorBoundary>
                     <ActivityFeed />
