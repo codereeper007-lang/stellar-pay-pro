@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAFAF9;
+  --surface: #FFFFFF;
+  --border: #E7E5E4;
+  --text: #1C1917;
+  --muted: #78716C;
+  --accent: #3730A3;
+  --accent-mid: #4338CA;
+  --accent-light: #EEF2FF;
+  --accent-glow: rgba(55, 48, 163, 0.12);
+  --success: #166534;
+  --success-light: #DCFCE7;
+  --error: #991B1B;
+  --error-light: #FEE2E2;
+  --warning: #92400E;
+  --warning-light: #FEF3C7;
+
+  /* Gradient tokens */
+  --grad-hero: linear-gradient(135deg, #EEF2FF 0%, #FAFAF9 50%, #F5F0FF 100%);
+  --grad-accent: linear-gradient(135deg, #3730A3 0%, #4F46E5 100%);
+  --grad-card: linear-gradient(145deg, #FFFFFF 0%, #FAFAF9 100%);
+  --grad-gold: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+}
+
+/* Base */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(55,48,163,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(79,70,229,0.05) 0%, transparent 50%);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ─── Skeleton shimmer ─── */
+@keyframes shimmer {
+  0%   { background-position: -400% 0 }
+  100% { background-position: 400% 0 }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #F5F5F4 0%,
+    #ECEBE9 30%,
+    #E7E5E4 50%,
+    #ECEBE9 70%,
+    #F5F5F4 100%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ─── Fade in ─── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+
+.fade-in { animation: fadeIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+/* ─── Slide down (for dropdowns & toasts) ─── */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97) }
+  to   { opacity: 1; transform: translateY(0) scale(1) }
+}
+
+.slide-down { animation: slideDown 0.25s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+/* ─── Slide in from top (activity feed) ─── */
+@keyframes slideFromTop {
+  from { opacity: 0; transform: translateY(-20px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+
+.slide-from-top { animation: slideFromTop 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+/* ─── Count number pop ─── */
+@keyframes countPop {
+  0%   { transform: scale(1) }
+  40%  { transform: scale(1.18) }
+  70%  { transform: scale(0.95) }
+  100% { transform: scale(1) }
+}
+
+.count-pop { animation: countPop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* ─── Pulse glow (success border) ─── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22,101,52,0.3) }
+  50%       { box-shadow: 0 0 0 8px rgba(22,101,52,0) }
+}
+
+.glow-success { animation: glowPulse 1.5s ease-in-out 2; }
+
+/* ─── Glow accent ─── */
+@keyframes glowAccent {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(55,48,163,0.25) }
+  50%       { box-shadow: 0 0 0 10px rgba(55,48,163,0) }
+}
+
+.glow-accent { animation: glowAccent 2s ease-in-out infinite; }
+
+/* ─── Live dot pulse ─── */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1) }
+  50%       { opacity: 0.5; transform: scale(0.85) }
+}
+
+.live-dot { animation: livePulse 1.5s ease-in-out infinite; }
+
+/* ─── Spin (for loaders) ─── */
+@keyframes spin {
+  from { transform: rotate(0deg) }
+  to   { transform: rotate(360deg) }
+}
+
+.spin { animation: spin 0.8s linear infinite; }
+
+/* ─── Gradient text ─── */
+.gradient-text {
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Glass card ─── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(231, 229, 228, 0.8);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.06),
+    0 4px 12px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* ─── Premium card ─── */
+.premium-card {
+  background: var(--grad-card);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 2px 8px rgba(0,0,0,0.06),
+    inset 0 1px 0 #FFFFFF;
+  border-radius: 16px;
+}
+
+/* ─── Accent card ─── */
+.accent-card {
+  background: var(--grad-accent);
+  border: 1px solid rgba(55,48,163,0.2);
+  box-shadow:
+    0 4px 16px rgba(55,48,163,0.2),
+    0 1px 4px rgba(55,48,163,0.1);
+  border-radius: 16px;
+  color: #FFFFFF;
+}
+
+/* ─── Hero gradient bg ─── */
+.hero-bg {
+  background: var(--grad-hero);
+}
+
+/* ─── Input styles ─── */
+.input-field {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-field:focus {
+  background: #FFFFFF;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.input-field::placeholder { color: var(--muted); }
+
+.input-field.error {
+  border-color: var(--error);
+  box-shadow: 0 0 0 3px rgba(153,27,27,0.08);
+}
+
+.input-field.success {
+  border-color: #166534;
+  box-shadow: 0 0 0 3px rgba(22,101,52,0.08);
+}
+
+/* ─── Section label ─── */
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ─── Step connector ─── */
+.step-line {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+/* ─── Scrollbar styling ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D6D3D1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #A8A29E; }
+
+/* ─── Selection ─── */
+::selection { background: #EEF2FF; color: #3730A3; }
+
+/* ─── Stat number ─── */
+.stat-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
