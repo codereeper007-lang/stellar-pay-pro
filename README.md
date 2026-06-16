@@ -30,11 +30,21 @@ The application integrates with the following Soroban smart contracts on the **S
 
 ## 📸 App Screenshots
 
+### Wallet Options Available (Wallet Modal)
+![Wallet Options Available](./public/screenshots/wallet_options.png)
+
 ### Wallet Connected & Dashboard (Balance Displayed)
 ![Wallet Connected](./public/screenshots/wallet_connected.png)
 
 ### Successful Testnet Transaction (Transaction Result)
 ![Successful Transaction](./public/screenshots/transaction_success.png)
+
+## 🔗 On-Chain Verified Transactions
+
+- **Soroban Contract Call Transaction Hash:** `0f49ab365ef03f9e49a5d5c9ad641fee1f5e0bae31c118e9bd3ac4260fc0b3d9`
+  - [View on Stellar Expert Explorer](https://stellar.expert/explorer/testnet/tx/0f49ab365ef03f9e49a5d5c9ad641fee1f5e0bae31c118e9bd3ac4260fc0b3d9)
+- **Standard Transaction/Split Fallback Transaction Hash:** `d65eb89559fa1fe44897a5595d3357b2144d4b41b4120327063955b077a1ec66`
+  - [View on Stellar Expert Explorer](https://stellar.expert/explorer/testnet/tx/d65eb89559fa1fe44897a5595d3357b2144d4b41b4120327063955b077a1ec66)
 
 ## ✅ Submission Checklist Status
 - [x] Public GitHub repository
