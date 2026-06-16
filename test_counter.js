@@ -19,13 +19,24 @@ async function test() {
     .build();
 
   console.log('Simulating tx for get_count...');
-  try {
-    const res = await RPC.simulateTransaction(tx);
-    console.log("Assembly:", typeof rpc.assembleTransaction);
-    const assembled = rpc.assembleTransaction(tx, res).build();
-    console.log("Assembled XDR:", assembled.toXDR());
-  } catch (e) {
-    console.error('Error:', e);
+  const res = await RPC.simulateTransaction(tx);
+  
+  const isError = rpc.Api.isSimulationError(res);
+  console.log('isSimulationError:', isError);
+  console.log('result keys:', Object.keys(res));
+  console.log('res.result:', res.result);
+  
+  if (res.result && res.result.retval) {
+    const retval = res.result.retval;
+    console.log('retval type:', typeof retval);
+    console.log('retval constructor:', retval.constructor?.name);
+    if (retval.switch) {
+      const sw = retval.switch();
+      console.log('switch name:', sw.name, 'value:', sw.value);
+      if (sw.name === 'scvU32') {
+        console.log('COUNT:', retval.u32());
+      }
+    }
   }
 }
-test();
+test().catch(console.error);

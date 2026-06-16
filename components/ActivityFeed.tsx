@@ -14,7 +14,10 @@ export function ActivityFeed() {
     ].filter(Boolean)
     
     const cleanup = subscribeToEvents(contractIds, (event) => {
-      setEvents((prev) => [event, ...prev].slice(0, 50))
+      setEvents((prev) => {
+        if (prev.some(e => e.id === event.id)) return prev
+        return [event, ...prev].slice(0, 50)
+      })
     })
     return cleanup
   }, [])

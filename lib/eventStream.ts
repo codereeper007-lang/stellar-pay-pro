@@ -14,12 +14,13 @@ export function subscribeToEvents(
 ): () => void {
   let lastLedger = 0
   let stopped = false
+  const seenIds = new Set<string>()
 
   const poll = async () => {
     if (stopped) return
     try {
       const latest = await RPC.getLatestLedger()
-      const start = lastLedger > 0 ? lastLedger : Math.max(1, latest.sequence - 100)
+      const start = lastLedger > 0 ? lastLedger + 1 : Math.max(1, latest.sequence - 100)
 
       const result = await RPC.getEvents({
         startLedger: start,
@@ -32,6 +33,9 @@ export function subscribeToEvents(
       lastLedger = latest.sequence
 
       result.events.forEach((raw: any) => {
+        const eventId = raw.id || `${Date.now()}-${Math.random()}`
+        if (seenIds.has(eventId)) return
+        seenIds.add(eventId)
         // Parse topic[0] as event type string
         let eventType = 'EVENT'
         try {
@@ -53,7 +57,7 @@ export function subscribeToEvents(
         else if (contractIds[2] && cid === contractIds[2]) contractLabel = 'SPLITTER'
 
         onEvent({
-          id: raw.id || `${Date.now()}-${Math.random()}`,
+          id: eventId,
           type: `${contractLabel}:${eventType}`,
           value: raw.value?.toString() || '',
           timestamp: new Date(),

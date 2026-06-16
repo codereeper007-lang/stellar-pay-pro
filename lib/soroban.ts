@@ -5,6 +5,7 @@ import {
   BASE_FEE,
   Contract,
   Address,
+  Keypair,
   xdr,
   Operation,
   Asset
@@ -51,45 +52,45 @@ async function waitForTransaction(hash: string): Promise<string> {
  * Read the current counter value via RPC simulation (no signature).
  */
 export async function getCount(): Promise<number> {
-  return cachedFetch(
-    'counter:count',
-    async () => {
-      const contract = new Contract(COUNTER_ID)
+  const contract = new Contract(COUNTER_ID)
 
-      // Throwaway source account (contract itself, seq 0)
-      const fakeAccount = {
-        accountId: () => 'GBZXN7P3UPON4U4WUVBDWAKX3LNNLBNG4BPNWBYNXVU3IHLK7CH2I66X',
-        sequenceNumber: () => '0',
-        incrementSequenceNumber: () => {},
-      } as any
+  // Use a random throwaway keypair — must be a valid G-address
+  const fakeAccount = {
+    accountId: () => Keypair.random().publicKey(),
+    sequenceNumber: () => '0',
+    incrementSequenceNumber: () => {},
+  } as any
 
-      const tx = new TransactionBuilder(fakeAccount, {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET,
-      })
-        .addOperation(contract.call('get_count'))
-        .setTimeout(30)
-        .build()
+  const tx = new TransactionBuilder(fakeAccount, {
+    fee: BASE_FEE,
+    networkPassphrase: Networks.TESTNET,
+  })
+    .addOperation(contract.call('get_count'))
+    .setTimeout(30)
+    .build()
 
-      const result = await RPC.simulateTransaction(tx)
-      if (SorobanRpc.Api.isSimulationError(result)) return 0
+  const result = await RPC.simulateTransaction(tx)
+  if (SorobanRpc.Api.isSimulationError(result)) {
+    throw new Error('Simulation error: ' + (result as any).error)
+  }
 
-      const retval = (result as any).result?.retval
-      if (!retval) return 0
-      
-      if (typeof retval === 'object' && retval.switch) {
-        return retval.switch().name === 'scvU32' ? retval.u32() : 0
-      }
+  const retval = (result as any).result?.retval
+  if (!retval) throw new Error('No retval in simulation result')
 
-      try {
-        const decoded = xdr.ScVal.fromXDR(retval, 'base64')
-        return decoded.switch().name === 'scvU32' ? decoded.u32() : 0
-      } catch {
-        return 0
-      }
-    },
-    5000
-  )
+  // SDK v16 returns ChildUnion directly (not base64 string)
+  if (typeof retval === 'object' && typeof retval.switch === 'function') {
+    const sw = retval.switch()
+    if (sw.name === 'scvU32') return retval.u32() as number
+    throw new Error('Unexpected retval type: ' + sw.name)
+  }
+
+  // Fallback: older SDK base64 string format
+  try {
+    const decoded = xdr.ScVal.fromXDR(retval as string, 'base64')
+    if (decoded.switch().name === 'scvU32') return decoded.u32()
+  } catch {}
+
+  throw new Error('Could not decode retval')
 }
 
 /**
@@ -125,8 +126,8 @@ export async function callIncrement(
 
   await waitForTransaction(sendResult.hash)
 
-  // Bust the cached count so next read is fresh
-  cache.invalidate('counter:count')
+  // Small delay to let ledger settle, then get fresh count
+  await new Promise(r => setTimeout(r, 1000))
   const newCount = await getCount()
   return { count: newCount, txHash: sendResult.hash }
 }
