@@ -4,7 +4,9 @@ import {
   Networks,
   BASE_FEE,
   Contract,
-  Address
+  Address,
+  nativeToScVal,
+  xdr
 } from '@stellar/stellar-sdk'
 import { signTx } from './wallet'
 
@@ -68,9 +70,45 @@ export async function callIncrement(
 
 export async function callSplitter(
   publicKey: string,
-  token: string,
-  numTotal: number,
-  recipients: string[]
+  tokenId: string,
+  recipients: string[],
+  totalAmount: string
 ): Promise<{ txHash: string }> {
-  return { txHash: 'simulated_hash' }
+  const SPLITTER_ID = process.env.NEXT_PUBLIC_PAYMENT_SPLITTER_ADDRESS!
+  const account = await RPC.getAccount(publicKey)
+  const contract = new Contract(SPLITTER_ID)
+
+  const recipientAddresses = recipients.map(r => new Address(r).toScVal())
+  const amountScVal = nativeToScVal(
+    BigInt(Math.floor(parseFloat(totalAmount) * 10_000_000)),
+    { type: 'i128' }
+  )
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: Networks.TESTNET
+  })
+    .addOperation(
+      contract.call(
+        'split_payment',
+        new Address(publicKey).toScVal(),
+        new Address(tokenId).toScVal(),
+        xdr.ScVal.scvVec(recipientAddresses),
+        amountScVal
+      )
+    )
+    .setTimeout(180)
+    .build()
+
+  const simResult = await RPC.simulateTransaction(tx)
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error('Simulation failed: ' + simResult.error)
+  }
+
+  const assembled = SorobanRpc.assembleTransaction(tx, simResult).build()
+  const signedXDR = await signTx(assembled.toXDR(), Networks.TESTNET)
+  const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET)
+  const sendResult = await RPC.sendTransaction(signedTx)
+
+  return { txHash: sendResult.hash }
 }
