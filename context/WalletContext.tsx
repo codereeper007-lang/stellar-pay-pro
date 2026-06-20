@@ -41,7 +41,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const connect = async (walletId: string) => {
     setState(s => ({ ...s, isLoading: true }))
-    const { publicKey, error } = await connectWallet(walletId)
+    const { publicKey, error } = await connectWallet()
     if (publicKey) {
       const balance = await getXLMBalance(publicKey)
       setState({
