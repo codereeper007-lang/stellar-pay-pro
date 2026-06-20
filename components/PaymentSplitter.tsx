@@ -45,7 +45,7 @@ export function PaymentSplitter() {
     setTxHash(null)
     
     try {
-      const { txHash } = await callSplitter(publicKey, token, numTotal, recipients)
+      const { txHash } = await callSplitter(publicKey, token, recipients, numTotal.toString())
       setTxHash(txHash)
       
       const btn = document.getElementById('split-btn')
