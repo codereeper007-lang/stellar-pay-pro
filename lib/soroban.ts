@@ -8,7 +8,7 @@ import {
   nativeToScVal,
   xdr
 } from '@stellar/stellar-sdk'
-import { signTx } from './wallet'
+import { signWithKit } from './wallet'
 
 const RPC = new SorobanRpc.Server('https://soroban-testnet.stellar.org')
 const COUNTER_ID = process.env.NEXT_PUBLIC_COUNTER_CONTRACT_ID!
@@ -40,6 +40,62 @@ export async function getCount(): Promise<number> {
   }
 }
 
+const REWARD_CONTRACT_ID = process.env.NEXT_PUBLIC_REWARD_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_REWARD_CONTRACT_ID || ''
+
+export async function getRewardBalance(address: string): Promise<number> {
+  try {
+    const contract = new Contract(REWARD_CONTRACT_ID)
+    const account = await RPC.getLatestLedger()
+    const dummyAccount = {
+      accountId: () => REWARD_CONTRACT_ID,
+      sequenceNumber: () => '0',
+      incrementSequenceNumber: () => {}
+    }
+    const tx = new TransactionBuilder(dummyAccount as any, {
+      fee: BASE_FEE,
+      networkPassphrase: Networks.TESTNET
+    })
+      .addOperation(contract.call('balance', new Address(address).toScVal()))
+      .setTimeout(30)
+      .build()
+    const result = await RPC.simulateTransaction(tx)
+    if (SorobanRpc.Api.isSimulationSuccess(result)) {
+      return Number(result.result?.retval) || 0
+    }
+    return 0
+  } catch (e) {
+    console.error('getRewardBalance error:', e)
+    return 0
+  }
+}
+
+export async function mint_reward(publicKey: string, splitCount: number): Promise<{ txHash: string }> {
+  const account = await RPC.getAccount(publicKey)
+  const contract = new Contract(REWARD_CONTRACT_ID)
+  
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: Networks.TESTNET
+  })
+    .addOperation(
+      contract.call('mint_reward', new Address(publicKey).toScVal(), nativeToScVal(splitCount, { type: 'i128' }))
+    )
+    .setTimeout(180)
+    .build()
+
+  const simResult = await RPC.simulateTransaction(tx)
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error('Simulation failed: ' + simResult.error)
+  }
+
+  const assembled = SorobanRpc.assembleTransaction(tx, simResult).build()
+  const signedXDR = await signWithKit(assembled.toXDR(), publicKey)
+  const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET)
+  const sendResult = await RPC.sendTransaction(signedTx)
+
+  return { txHash: sendResult.hash }
+}
+
 export async function callIncrement(
   publicKey: string
 ): Promise<{ count: number; txHash: string }> {
@@ -61,7 +117,7 @@ export async function callIncrement(
   }
 
   const assembled = SorobanRpc.assembleTransaction(tx, simResult).build()
-  const signedXDR = await signTx(assembled.toXDR(), Networks.TESTNET)
+  const signedXDR = await signWithKit(assembled.toXDR(), publicKey)
   const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET)
   const sendResult = await RPC.sendTransaction(signedTx)
 
@@ -106,7 +162,7 @@ export async function callSplitter(
   }
 
   const assembled = SorobanRpc.assembleTransaction(tx, simResult).build()
-  const signedXDR = await signTx(assembled.toXDR(), Networks.TESTNET)
+  const signedXDR = await signWithKit(assembled.toXDR(), publicKey)
   const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET)
   const sendResult = await RPC.sendTransaction(signedTx)
 

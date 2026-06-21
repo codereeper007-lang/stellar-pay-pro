@@ -1,33 +1,30 @@
-import {
-  isConnected,
-  requestAccess as getPublicKey,
-  isAllowed,
-  setAllowed,
-  signTransaction
-} from '@stellar/freighter-api'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
+import { FreighterModule, FREIGHTER_ID } from '@creit.tech/stellar-wallets-kit/modules/freighter'
+import { xBullModule } from '@creit.tech/stellar-wallets-kit/modules/xbull'
+import { AlbedoModule } from '@creit.tech/stellar-wallets-kit/modules/albedo'
 
-export function checkFreighterInstalled(): boolean {
-  return typeof window !== 'undefined' &&
-         typeof (window as any).freighter !== 'undefined'
-}
+StellarWalletsKit.init({
+  network: 'Test SDF Network ; September 2015' as any,
+  selectedWalletId: FREIGHTER_ID,
+  modules: [
+    new FreighterModule(),
+    new xBullModule(),
+    new AlbedoModule()
+  ]
+})
 
-export async function connectWallet(): Promise<{
+export const kit = StellarWalletsKit;
+
+export async function connectWallet(walletId: string): Promise<{
   publicKey: string | null
   error: string | null
 }> {
   try {
-    const connected = await isConnected()
-    if (!connected) {
-      return { publicKey: null, error: 'Freighter not installed' }
-    }
-    const allowed = await isAllowed()
-    if (!allowed) {
-      await setAllowed()
-    }
-    const result: any = await getPublicKey()
-    const publicKey = result.address || result
-    localStorage.setItem('stellar_wallet_pk', publicKey)
-    return { publicKey, error: null }
+    kit.setWallet(walletId)
+    const { address } = await kit.getAddress()
+    localStorage.setItem('stellar_wallet_pk', address)
+    localStorage.setItem('stellar_wallet_id', walletId)
+    return { publicKey: address, error: null }
   } catch (e: any) {
     return { publicKey: null, error: e?.message || 'Connection failed' }
   }
@@ -35,16 +32,16 @@ export async function connectWallet(): Promise<{
 
 export function disconnectWallet(): void {
   localStorage.removeItem('stellar_wallet_pk')
+  localStorage.removeItem('stellar_wallet_id')
 }
 
-export async function signTx(
+export async function signWithKit(
   transactionXDR: string,
-  networkPassphrase: string
+  publicKey: string
 ): Promise<string> {
-  const result: any = await signTransaction(transactionXDR, { networkPassphrase })
-  return result.signedTxXdr || result
-}
-
-export async function signWithKit(transactionXDR: string, publicKey: string): Promise<string> {
-  return signTx(transactionXDR, 'Test SDF Network ; September 2015')
+  const { signedTxXdr } = await kit.signTransaction(transactionXDR, {
+    networkPassphrase: 'Test SDF Network ; September 2015',
+    address: publicKey
+  })
+  return signedTxXdr
 }

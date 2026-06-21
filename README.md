@@ -11,6 +11,7 @@
   <br />
   
   [**🚀 Live Demo**](https://stellar-pay-pro.vercel.app/) &nbsp; • &nbsp;
+  [**🎥 Demo Video**](https://www.loom.com/share/d07a88a96a08434d98ec357060cded54) &nbsp; • &nbsp;
   [**📖 Documentation**](#-features--architecture) &nbsp; • &nbsp;
   [**🛠️ Smart Contracts**](#️-smart-contracts-deployed)
 
@@ -20,7 +21,7 @@
 
 > StellarPay Pro demonstrates advanced smart contract capabilities, real-time event streaming, and production-ready architecture tailored for the Stellar ecosystem.
 
-## ✨ Features & Architecture
+## Description
 
 - ⚡ **Production-Ready Architecture:** Built with Next.js 14 (App Router), strict TypeScript, and Tailwind CSS.
 - 📱 **Mobile Responsive Frontend:** Fluid UI that scales perfectly from desktop to mobile screens using modern glass-morphism aesthetics.
@@ -31,7 +32,7 @@
 
 ---
 
-## 🛠️ Smart Contracts Deployed
+## Contract Addresses
 
 The application natively integrates with the following Soroban smart contracts on the **Stellar Testnet**:
 
@@ -51,7 +52,7 @@ The application natively integrates with the following Soroban smart contracts o
 
 ---
 
-## 💻 Local Development
+## Setup Instructions
 
 Follow these steps to run the application locally:
 
