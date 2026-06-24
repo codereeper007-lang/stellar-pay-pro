@@ -1,27 +1,51 @@
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit'
-import { FreighterModule, FREIGHTER_ID } from '@creit.tech/stellar-wallets-kit/modules/freighter'
+import { FREIGHTER_ID, FreighterModule } from '@creit.tech/stellar-wallets-kit/modules/freighter'
 import { xBullModule } from '@creit.tech/stellar-wallets-kit/modules/xbull'
 import { AlbedoModule } from '@creit.tech/stellar-wallets-kit/modules/albedo'
+import { LobstrModule } from '@creit.tech/stellar-wallets-kit/modules/lobstr'
 
-StellarWalletsKit.init({
-  network: 'Test SDF Network ; September 2015' as any,
-  selectedWalletId: FREIGHTER_ID,
-  modules: [
-    new FreighterModule(),
-    new xBullModule(),
-    new AlbedoModule()
-  ]
-})
+let isInitialized = false;
 
-export const kit = StellarWalletsKit;
+export function getKit(): any {
+  if (!isInitialized) {
+    try {
+      StellarWalletsKit.init({
+        network: 'Test SDF Network ; September 2015' as any,
+        selectedWalletId: localStorage.getItem('stellar_wallet_id') || FREIGHTER_ID,
+        modules: [
+          new FreighterModule(),
+          new xBullModule(),
+          new AlbedoModule(),
+          new LobstrModule(),
+        ]
+      });
+      isInitialized = true;
+    } catch (e) {}
+  } else {
+    const wid = localStorage.getItem('stellar_wallet_id');
+    if (wid) {
+      try {
+        StellarWalletsKit.setWallet(wid);
+      } catch (e) {}
+    }
+  }
+  return StellarWalletsKit;
+}
+
+export const kit = {
+  setWallet: (walletId: string) => getKit().setWallet(walletId),
+  getAddress: () => getKit().getAddress(),
+  signTransaction: (xdr: string, opts: any) => getKit().signTransaction(xdr, opts),
+};
 
 export async function connectWallet(walletId: string): Promise<{
   publicKey: string | null
   error: string | null
 }> {
   try {
-    kit.setWallet(walletId)
-    const { address } = await kit.getAddress()
+    const currentKit = getKit();
+    currentKit.setWallet(walletId)
+    const { address } = await currentKit.getAddress()
     localStorage.setItem('stellar_wallet_pk', address)
     localStorage.setItem('stellar_wallet_id', walletId)
     return { publicKey: address, error: null }
@@ -39,7 +63,8 @@ export async function signWithKit(
   transactionXDR: string,
   publicKey: string
 ): Promise<string> {
-  const { signedTxXdr } = await kit.signTransaction(transactionXDR, {
+  const currentKit = getKit();
+  const { signedTxXdr } = await currentKit.signTransaction(transactionXDR, {
     networkPassphrase: 'Test SDF Network ; September 2015',
     address: publicKey
   })

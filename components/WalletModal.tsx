@@ -11,6 +11,7 @@ const WALLETS = [
   { id: 'freighter', name: 'Freighter', desc: 'Browser Extension', icon: '🦊', color: 'bg-[#FFEDD5] text-[#C2410C]' },
   { id: 'xbull', name: 'xBull', desc: 'Browser Extension', icon: '🐂', color: 'bg-[#FEF08A] text-[#A16207]' },
   { id: 'albedo', name: 'Albedo', desc: 'Web Wallet', icon: '🌐', color: 'bg-[#E0E7FF] text-[#4338CA]' },
+  { id: 'lobstr', name: 'Lobstr', desc: 'Mobile / Web Wallet', icon: '🦞', color: 'bg-[#DCFCE7] text-[#15803D]' },
 ]
 
 export function WalletModal({ isOpen, onClose, onSelect }: WalletModalProps) {
